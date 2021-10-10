@@ -91,15 +91,11 @@ export default class SortableTable {
   }
   sort(field, order) {
     const sortedData = this.sortData(field, order);
-    const currentColumn = this.subElements.header.querySelector(
-      `.sortable-table__cell[data-id=${field}]`
-    );
 
     Array.prototype.forEach.call(this.subElements.header.children, (item) => {
-      item.dataset.order = "";
+      if (item.dataset.id === field) item.dataset.order = order;
+      else item.dataset.order = "";
     });
-
-    currentColumn.dataset.order = order;
 
     this.subElements.body.innerHTML = this.getBodyRows(sortedData);
   }
