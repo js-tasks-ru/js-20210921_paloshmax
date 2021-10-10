@@ -9,7 +9,7 @@ export function trimSymbols(string, size) {
   let result = "";
   let activeChar;
   let pointer;
-  for (let char of string) {
+  for (const char of string) {
     if (char !== activeChar) {
       activeChar = char;
       pointer = 0;

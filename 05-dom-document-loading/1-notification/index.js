@@ -1,6 +1,7 @@
 export default class NotificationMessage {
-  static activeMessage = null;
-  static timerId = null;
+  static activeMessage;
+  element;
+
   constructor(message, { duration = 1000, type = "success" } = {}) {
     this.message = message;
     this.duration = duration;
@@ -27,25 +28,25 @@ export default class NotificationMessage {
     wrapper.innerHTML = this.template;
     this.element = wrapper.firstElementChild;
   }
-  show(target) {
-    if (NotificationMessage.activeMessage !== null)
+  show(target = document.body) {
+    if (NotificationMessage.activeMessage)
       NotificationMessage.activeMessage.remove();
 
-    NotificationMessage.activeMessage = this.element;
+    target.append(this.element);
 
-    if (target) target.append(this.element);
-    else document.body.append(this.element);
-
-    clearTimeout(NotificationMessage.timerId);
-    NotificationMessage.timerId = setTimeout(() => {
+    this.timerId = setTimeout(() => {
       this.remove();
-      NotificationMessage.activeMessage = null;
     }, this.duration);
+
+    NotificationMessage.activeMessage = this;
   }
   remove() {
+    clearTimeout(this.timerId);
     if (this.element) this.element.remove();
   }
   destroy() {
     this.remove();
+    this.element = null;
+    NotificationMessage.activeMessage = null;
   }
 }

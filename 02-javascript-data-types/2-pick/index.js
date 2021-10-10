@@ -5,8 +5,9 @@
  * @returns {object} - returns the new object
  */
 export const pick = (obj, ...fields) => {
-  return fields.reduce((acc, item) => {
-    if (Object.hasOwnProperty.call(obj, item)) acc[item] = obj[item];
+  const list = new Set(fields);
+  return Object.entries(obj).reduce((acc, { 0: propName, 1: value }) => {
+    if (list.has(propName)) acc[propName] = value;
     return acc;
   }, {});
 };
