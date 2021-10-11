@@ -5,10 +5,9 @@
  * @returns {object} - returns the new object
  */
 export const omit = (obj, ...fields) => {
-  let tempObj = Object.assign({}, obj);
-  fields.reduce((acc, item) => {
-    if (Object.hasOwnProperty.call(tempObj, item)) delete tempObj[item];
+  const list = new Set(fields);
+  return Object.entries(obj).reduce((acc, { 0: propName, 1: value }) => {
+    if (!list.has(propName)) acc[propName] = value;
     return acc;
   }, {});
-  return tempObj;
 };
