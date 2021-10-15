@@ -2,15 +2,15 @@ export default class SortableTable {
   element;
   subElements;
 
-  sortClickHandler = (e) => {
-    const target = e.target.closest(".sortable-table__cell");
-    if (!target) return;
-
-    let value;
-    if (target.dataset.order === undefined || target.dataset.order === "asc")
-      value = "desc";
-    else if (target.dataset.order === "desc") value = "asc";
-    this.sort(target.dataset.id, value);
+  sortClickHandler = (event) => {
+    const target = event.target.closest(".sortable-table__cell");
+    if (target) {
+      const value =
+        !target.dataset.order || target.dataset.order === "asc"
+          ? "desc"
+          : "asc";
+      this.sort(target.dataset.id, value);
+    }
   };
   constructor(
     headerConfig = [],
@@ -27,7 +27,6 @@ export default class SortableTable {
     this.sorted = sorted;
     this.sortedData = [];
     this.render();
-    this.addEventListeners();
   }
   get template() {
     return /* html */ `
@@ -93,6 +92,7 @@ export default class SortableTable {
     wrapper.innerHTML = this.template;
     this.element = wrapper.firstElementChild;
     this.subElements = this.getSubElements(this.element);
+    this.addEventListeners();
   }
   sortData(field, order) {
     const data = [...this.data];
@@ -121,7 +121,7 @@ export default class SortableTable {
 
     const sortedData = this.sortData(field, order);
 
-    Array.prototype.forEach.call(this.subElements.header.children, (item) => {
+    [...this.subElements.header.children].forEach((item) => {
       if (item.dataset.id === field) item.dataset.order = order;
       else delete item.dataset.order;
     });
