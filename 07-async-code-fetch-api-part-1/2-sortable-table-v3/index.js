@@ -234,5 +234,6 @@ export default class SortableTable {
     this.remove();
     this.element = null;
     this.subElements = null;
+    document.removeEventListener("scroll", this.scrollLoadDataHandler);
   }
 }
