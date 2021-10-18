@@ -8,23 +8,20 @@ export default class ColumnChart {
   constructor({
     url = "",
     range = {
-      from: null,
-      to: null,
+      from: new Date(),
+      to: new Date(),
     },
-    data = [],
     label = "",
-    value = 0,
     link = "",
     formatHeading = (data) => data,
   } = {}) {
-    this.url = url;
+    this.url = new URL(url, BACKEND_URL);
     this.range = range;
-    this.data = data;
     this.label = label;
-    this.value = value;
     this.link = link;
     this.formatHeading = formatHeading;
     this.render();
+    this.update(this.range.from, this.range.to);
   }
   get template() {
     return `
@@ -33,12 +30,8 @@ export default class ColumnChart {
       }">
         <div class="column-chart__title">${this.getTitle(this.label)}</div>
         <div class="column-chart__container">
-          <div data-element="header" class="column-chart__header">
-            ${this.getHeader(this.value)}
-          </div>
-          <div data-element="body" class="column-chart__chart">
-            ${this.getBody(this.data)}
-          </div>
+          <div data-element="header" class="column-chart__header"></div>
+          <div data-element="body" class="column-chart__chart"></div>
         </div>
       </div>`;
   }
@@ -47,31 +40,37 @@ export default class ColumnChart {
     wrapper.innerHTML = this.template;
     this.element = wrapper.firstElementChild;
     this.subElements = this.getSubElements(this.element);
-    this.update(this.range.from, this.range.to);
-  }
-  async updateData(url) {
-    const response = await fetch(url);
-    if (response.ok) {
-      const result = await response.json();
-      this.data = Object.values(result);
-      this.value = this.data.reduce((acc, item) => (acc += item), 0);
-      return result;
-    }
   }
   async update(from, to) {
-    const actualURL = new URL(this.url, BACKEND_URL);
-    if (from && to) {
-      actualURL.searchParams.set("from", from.toISOString());
-      actualURL.searchParams.set("to", to.toISOString());
-    }
     this.element.classList.add("column-chart_loading");
-    const data = await this.updateData(actualURL.toString());
-    this.element.classList.remove("column-chart_loading");
+    this.url.searchParams.set("from", from.toISOString());
+    this.url.searchParams.set("to", to.toISOString());
+    const data = await this.loadData(this.url);
 
-    this.subElements.header.innerHTML = this.getHeader(this.value);
-    this.subElements.body.innerHTML = this.getBody(this.data);
+    this.setRange(from, to);
+
+    if (data && Object.values(data).length) {
+      this.subElements.header.innerHTML = this.getHeader(data);
+      this.subElements.body.innerHTML = this.getBody(data);
+      this.element.classList.remove("column-chart_loading");
+    }
 
     return data;
+  }
+  async loadData(url) {
+    const response = await fetch(url.toString());
+    if (response.ok) {
+      return response.json();
+    } else throw Error(response.status);
+  }
+  setRange(from, to) {
+    this.range.from = from;
+    this.range.to = to;
+  }
+  getHeader(data) {
+    return this.formatHeading(
+      Object.values(data).reduce((acc, item) => (acc += item), 0)
+    );
   }
   getTitle(label) {
     return `Total ${label}${this.getLink()}`;
@@ -81,14 +80,11 @@ export default class ColumnChart {
       ? `<a href="/${this.label}" class="column-chart__link">View all</a>`
       : ``;
   }
-  getHeader(value) {
-    return this.formatHeading(value);
-  }
   getBody(data) {
-    const maxValue = Math.max(...data);
+    const maxValue = Math.max(...Object.values(data));
     const scale = this.chartHeight / maxValue;
 
-    return data
+    return Object.values(data)
       .map((item) => {
         const percents = ((item / maxValue) * 100).toFixed(0) + "%";
         const value = Math.floor(item * scale);
