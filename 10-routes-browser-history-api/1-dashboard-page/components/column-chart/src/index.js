@@ -1,54 +1,75 @@
-import fetchJson from '../../../utils/fetch-json.js';
+import fetchJson from "../../../utils/fetch-json.js";
 
-const BACKEND_URL = 'https://course-js.javascript.ru';
+const BACKEND_URL = "https://course-js.javascript.ru";
 
 export default class ColumnChart {
   element;
   subElements = {};
   chartHeight = 50;
+  isLoaded;
+  componentIsLoaded = new Promise((resolve) => {
+    this.isLoaded = resolve;
+  });
+
+  onOverOut = (event) => {
+    const target = event.target.closest(".column-chart__element");
+    if (target) {
+      const container = target.closest(".column-chart__chart");
+      container.classList.toggle("has-hovered");
+      target.classList.toggle("is-hovered");
+    }
+  };
 
   constructor({
-    label = '',
-    link = '',
-    formatHeading = data => data,
-    url = '',
+    label = "",
+    link = "",
+    formatHeading = (data) => data,
+    url = "",
     range = {
       from: new Date(),
       to: new Date(),
-    }
+    },
+    isBarHighlight = true,
   } = {}) {
     this.url = new URL(url, BACKEND_URL);
     this.range = range;
     this.label = label;
     this.link = link;
     this.formatHeading = formatHeading;
+    this.isBarHighlight = isBarHighlight;
 
     this.render();
   }
 
-  render() {
+  async render() {
     const { from, to } = this.range;
-    const element = document.createElement('div');
+    const element = document.createElement("div");
 
     element.innerHTML = this.template;
 
     this.element = element.firstElementChild;
     this.subElements = this.getSubElements(this.element);
 
-    this.loadData(from, to);
+    await this.loadData(from, to);
+
+    this.isLoaded();
+
+    if (this.isBarHighlight) this.events("add");
   }
 
   getHeaderValue(data) {
-    return this.formatHeading(Object.values(data).reduce((accum, item) => (accum + item), 0));
+    return this.formatHeading(
+      Object.values(data).reduce((accum, item) => accum + item, 0)
+    );
   }
 
   async loadData(from, to) {
-    this.element.classList.add('column-chart_loading');
-    this.subElements.header.textContent = '';
-    this.subElements.body.innerHTML = '';
+    this.element.classList.add("column-chart_loading");
+    this.subElements.header.textContent = "";
+    this.subElements.body.innerHTML = "";
 
-    this.url.searchParams.set('from', from.toISOString());
-    this.url.searchParams.set('to', to.toISOString());
+    this.url.searchParams.set("from", from.toISOString());
+    this.url.searchParams.set("to", to.toISOString());
 
     const data = await fetchJson(this.url);
 
@@ -58,7 +79,7 @@ export default class ColumnChart {
       this.subElements.header.textContent = this.getHeaderValue(data);
       this.subElements.body.innerHTML = this.getColumnBody(data);
 
-      this.element.classList.remove('column-chart_loading');
+      this.element.classList.remove("column-chart_loading");
     }
   }
 
@@ -70,26 +91,33 @@ export default class ColumnChart {
   getColumnBody(data) {
     const maxValue = Math.max(...Object.values(data));
 
-    return Object.entries(data).map(([key, value]) => {
-      const scale = this.chartHeight / maxValue;
-      const percent = (value / maxValue * 100).toFixed(0);
-      const tooltip = `<span>
-        <small>${key.toLocaleString('default', {dateStyle: 'medium'})}</small>
+    return Object.entries(data)
+      .map(([key, value]) => {
+        const scale = this.chartHeight / maxValue;
+        const tooltip = `<span>
+        <small>${key.toLocaleString("default", { dateStyle: "medium" })}</small>
         <br>
-        <strong>${percent}%</strong>
+        <strong>${this.formatHeading(value)}</strong>
       </span>`;
 
-      return `<div style="--value: ${Math.floor(value * scale)}" data-tooltip="${tooltip}"></div>`;
-    }).join('');
+        return `<div class="column-chart__element" style="--value: ${Math.floor(
+          value * scale
+        )}" data-tooltip="${tooltip}"></div>`;
+      })
+      .join("");
   }
 
   getLink() {
-    return this.link ? `<a class="column-chart__link" href="${this.link}">View all</a>` : '';
+    return this.link
+      ? `<a class="column-chart__link" href="${this.link}">View all</a>`
+      : "";
   }
 
   get template() {
     return `
-      <div class="column-chart column-chart_loading" style="--chart-height: ${this.chartHeight}">
+      <div class="column-chart column-chart_loading" style="--chart-height: ${
+        this.chartHeight
+      }">
         <div class="column-chart__title">
           Total ${this.label}
           ${this.getLink()}
@@ -103,7 +131,7 @@ export default class ColumnChart {
   }
 
   getSubElements(element) {
-    const elements = element.querySelectorAll('[data-element]');
+    const elements = element.querySelectorAll("[data-element]");
 
     return [...elements].reduce((accum, subElement) => {
       accum[subElement.dataset.element] = subElement;
@@ -116,7 +144,13 @@ export default class ColumnChart {
     return await this.loadData(from, to);
   }
 
+  events(type) {
+    this.element[`${type}EventListener`]("pointerover", this.onOverOut);
+    this.element[`${type}EventListener`]("pointerout", this.onOverOut);
+  }
+
   destroy() {
     this.element.remove();
+    this.events("remove");
   }
 }

@@ -1,44 +1,72 @@
 const header = [
   {
-    id: 'images',
-    title: 'Image',
+    id: "images",
+    title: "Image",
     sortable: false,
-    template: data => {
+    template: (data = []) => {
       return `
-          <div class="sortable-table__cell">
-            <img class="sortable-table-image" alt="Image" src="${data[0].url}">
-          </div>
-        `;
-    }
+        <div class="sortable-table__cell">
+          <img class="sortable-table-image" alt="Image" src="${data[0]?.url}">
+        </div>
+      `;
+    },
   },
   {
-    id: 'title',
-    title: 'Name',
+    id: "title",
+    title: "Name",
     sortable: true,
-    sortType: 'string'
+    sortType: "string",
   },
   {
-    id: 'quantity',
-    title: 'Quantity',
-    sortable: true,
-    sortType: 'number'
+    id: "subcategory",
+    title: "Category",
+    sortable: false,
+    template: ({ category: { title: catTitle }, title } = {}) => {
+      const template = `
+        <div class='sortable-table-tooltip'>
+          <span class='sortable-table-tooltip__category'>${catTitle}</span> /
+          <b class='sortable-table-tooltip__subcategory'>${title}</b>
+        </div>
+      `;
+      return `
+        <div class="sortable-table__cell">
+          <span data-tooltip="${template}">${title}</span>
+        </div>
+      `;
+    },
   },
   {
-    id: 'price',
-    title: 'Price',
+    id: "quantity",
+    title: "Quantity",
     sortable: true,
-    sortType: 'number'
+    sortType: "number",
   },
   {
-    id: 'status',
-    title: 'Status',
+    id: "price",
+    title: "Price",
     sortable: true,
-    sortType: 'number',
-    template: data => {
+    sortType: "number",
+    template: (price) => {
+      return `<div class="sortable-table__cell">${price}$</div>`;
+    },
+  },
+  /*{
+    id: "status",
+    title: "Status",
+    sortable: true,
+    sortType: "number",
+    template: (data) => {
       return `<div class="sortable-table__cell">
-          ${data > 0 ? 'Active' : 'Inactive'}
+          ${data > 0 ? "Active" : "Inactive"}
         </div>`;
     }
+    
+  },*/
+  {
+    id: "sales",
+    title: "Sales",
+    sortable: true,
+    sortType: "number",
   },
 ];
 
